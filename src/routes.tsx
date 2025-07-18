@@ -15,10 +15,12 @@ export const AppRoutes = () => {
         />
 
         <Route path={PATHS.ADMIN_MAIN.path} element={<Views.AdminMain />}>
-          <Route
-            path={PATHS.ADMIN_VIEW.DASHBOARD.path}
-            element={<Views.Dashboard />}
-          />
+          <Route path={PATHS.ADMIN_VIEW.DASHBOARD.path} element={<Views.Dashboard />}/>
+          <Route path={PATHS.ADMIN_VIEW.STUDENT_MGNT.VIEW.path} element={<Views.ViewStudent />} />
+          <Route path={PATHS.ADMIN_VIEW.STUDENT_MGNT.ADD.path} element={<Views.AddStudent />} />
+          <Route path={PATHS.ADMIN_VIEW.ADVISOR_MGNT.VIEW.path} element={<Views.ViewAdvisor />} />
+          <Route path={PATHS.ADMIN_VIEW.ADVISOR_MGNT.ADD.path} element={<Views.AddAdvisor />} />
+          <Route path={PATHS.ADMIN_VIEW.CLUSTER_MGNT.VIEW.path} element={<Views.ViewCluster />} />
 
           {/* User Management */}
           <Route

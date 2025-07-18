@@ -40,12 +40,37 @@ export const PATHS = {
             path: "dashboard",
             label: "Dashboard"
         },
-        NOTIFICATION: {
-            path: "notifications",
-            label: "Notifications"
+        STUDENT_MGNT: {
+            VIEW: {
+                path: "students/view",
+                label: "View Students"
+            },
+            ADD: {
+                path: "students/add",
+                label: "Add Students"
+            }
+        },
+        ADVISOR_MGNT: {
+            VIEW: {
+                path: "advisors/view",
+                label: "View Advisors"
+            },
+            ADD: {
+                path: "advisors/add",
+                label: "Add Advisors"
+            }
+        },
+        CLUSTER_MGNT: {
+            VIEW: {
+                path: "clusters/view",
+                label: "View Clusters"
+            },
+            ADD: {
+                path: "cluster/add",
+                label: "Add Cluster"
+            }
         },
     },
-    // Add more routes here
 };
 
 export const ADMIN_MENU = [
@@ -57,4 +82,6 @@ export const ADMIN_MENU = [
         path: "/users/view",
         label: "View Users"
     },
+
+    
 ];
