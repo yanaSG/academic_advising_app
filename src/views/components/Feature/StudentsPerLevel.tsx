@@ -4,28 +4,25 @@ import {
 } from 'recharts';
 
 const data = [
-    { day: 'Sun', bookings: 12, utilization: 60 },
-    { day: 'Mon', bookings: 18, utilization: 75 },
-    { day: 'Tue', bookings: 10, utilization: 50 },
-    { day: 'Wed', bookings: 15, utilization: 80 },
-    { day: 'Thu', bookings: 20, utilization: 90 },
-    { day: 'Fri', bookings: 14, utilization: 65 },
-    { day: 'Sat', bookings: 8, utilization: 40 },
+    { yearLevel: '1st Year', students: 150, percentage: 35 },
+    { yearLevel: '2nd Year', students: 120, percentage: 28 },
+    { yearLevel: '3rd Year', students: 100, percentage: 23 },
+    { yearLevel: '4th Year', students: 60, percentage: 14 },
 ];
 
-const BookingsPerRoom: React.FC = () => {
+const StudentsPerLevel: React.FC = () => {
     return (
-        <div className='h-45 w-100'>
+        <div className='h-full w-full mt-4'>
             <h2 className='text-center font-bold text-[#1F2937] mb-3'>
-            Bookings per Day (Trend Over Time)
+            Number of Students per Year Level
             </h2>
             <ResponsiveContainer>
             <ComposedChart data={data}>
                 <CartesianGrid stroke="#eee" strokeDasharray="3 3" />
                 <XAxis
-                    dataKey="day"
+                    dataKey="yearLevel"
                     label={{
-                        value: 'Day',
+                        value: 'Year Level',
                         position: 'insideBottom',
                         offset: 2,
                         dy: 4,
@@ -36,7 +33,7 @@ const BookingsPerRoom: React.FC = () => {
                 <YAxis
                     yAxisId="left"
                     label={{
-                        value: 'Bookings',
+                        value: 'Number of Students',
                         angle: -90,
                         position: 'insideLeft',
                         dx: 6,
@@ -48,7 +45,7 @@ const BookingsPerRoom: React.FC = () => {
                     yAxisId="right"
                     orientation="right"
                     label={{
-                        value: 'Utilization (%)',
+                        value: 'Percentage (%)',
                         angle: 90,
                         position: 'insideRight',
                         dx: -6,
@@ -59,20 +56,20 @@ const BookingsPerRoom: React.FC = () => {
                 <Tooltip />
                 <Bar
                     yAxisId="left"
-                    dataKey="bookings"
-                    name="Number of Bookings"
+                    dataKey="students"
+                    name="Number of Students"
                     fill="#1E40AF"
-                    barSize={22}
+                    barSize={50}
                     radius={[10, 10, 0, 0]}
                 />
                 <Line
                     yAxisId="right"
                     type="linear"
-                    dataKey="utilization"
-                    name="Utilization (%)"
+                    dataKey="percentage"
+                    name="Percentage (%)"
                     stroke="#EF4444"
-                    strokeWidth={3}
-                    dot={{ r: 4, stroke: '#EF4444', strokeWidth: 2, fill: '#EF4444' }}
+                    strokeWidth={4}
+                    dot={{ r: 4, stroke: '#EF4444', strokeWidth: 8, fill: '#EF4444' }}
                 />
             </ComposedChart>
             </ResponsiveContainer>
@@ -80,4 +77,4 @@ const BookingsPerRoom: React.FC = () => {
     );
 };
 
-export default BookingsPerRoom;
+export default StudentsPerLevel;
