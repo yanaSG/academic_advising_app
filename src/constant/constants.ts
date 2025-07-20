@@ -68,6 +68,10 @@ export const PATHS = {
             ADD: {
                 path: "cluster/add",
                 label: "Add Cluster"
+            },
+            EDIT: {
+                path: "clusters/edit/:id",
+                label: "Edit Cluster"
             }
         },
     },

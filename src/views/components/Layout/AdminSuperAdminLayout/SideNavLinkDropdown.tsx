@@ -38,6 +38,8 @@ const SideNavLinkDropdown: React.FC<SideNavLinkDropdownProps> = ({ label, icon }
                 return 'admins';
             case 'users':
                 return 'users';
+            case 'Students':
+                return 'Students';
             default:
                 return '';
         }

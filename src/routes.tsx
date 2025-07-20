@@ -21,6 +21,7 @@ export const AppRoutes = () => {
           <Route path={PATHS.ADMIN_VIEW.ADVISOR_MGNT.VIEW.path} element={<Views.ViewAdvisor />} />
           <Route path={PATHS.ADMIN_VIEW.ADVISOR_MGNT.ADD.path} element={<Views.AddAdvisor />} />
           <Route path={PATHS.ADMIN_VIEW.CLUSTER_MGNT.VIEW.path} element={<Views.ViewCluster />} />
+          <Route path={PATHS.ADMIN_VIEW.CLUSTER_MGNT.EDIT.path} element={<Views.EditCluster />} />
 
           {/* User Management */}
           <Route

@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { FaEdit, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 interface CRUDTableProps {
   columns: string[];
   data: (string | number)[][];
   onEdit: (rowIndex: number) => void;
   itemsPerPage?: number;
-  itemLabel?: string;
+  itemLabel?: string;        // Used for labeling
   addButtonLabel?: string;
   onAdd?: () => void;
+  idColumnIndex?: number;    // Index for the unique ID field
 }
 
 const CRUDTable: React.FC<CRUDTableProps> = ({
@@ -19,9 +21,11 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
   itemLabel = "items",
   addButtonLabel = "Add",
   onAdd,
+  idColumnIndex = 0,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(data.length / itemsPerPage);
+  const navigate = useNavigate();
 
   const paginatedData = data.slice(
     (currentPage - 1) * itemsPerPage,
@@ -34,9 +38,7 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
         <thead className="bg-white text-[#4B5563] uppercase sticky top-0 z-10 shadow-md">
           <tr>
             {columns.map((col, idx) => (
-              <th key={idx} className="px-4 py-3.5">
-                {col}
-              </th>
+              <th key={idx} className="px-4 py-3.5">{col}</th>
             ))}
           </tr>
         </thead>
@@ -49,15 +51,14 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
               }`}
             >
               {row.map((cell, cellIndex) => (
-                <td key={cellIndex} className="px-4 py-4.5">
-                  {cell}
-                </td>
+                <td key={cellIndex} className="px-4 py-4.5">{cell}</td>
               ))}
               <td className="px-4 py-2">
                 <button
-                  onClick={() =>
-                    onEdit((currentPage - 1) * itemsPerPage + rowIndex)
-                  }
+                  onClick={() => {
+                    const id = row[idColumnIndex];
+                    navigate(`/admin/${itemLabel}/edit/${id}`);
+                  }}
                   className="text-[#09984B] border rounded-full px-2 py-1 flex flex-row items-center justify-center gap-1"
                 >
                   Edit <FaEdit />
@@ -69,14 +70,11 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
       </table>
 
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-4 py-2 bg-white border-t border-t-[#F3F4F6] text-sm">
-        {/* Left: Showing info */}
         <div>
           Showing {(currentPage - 1) * itemsPerPage + 1}–
-          {Math.min(currentPage * itemsPerPage, data.length)} of {data.length}{" "}
-          {itemLabel}
+          {Math.min(currentPage * itemsPerPage, data.length)} of {data.length} {itemLabel}
         </div>
 
-        {/* Center: Pagination controls */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -97,9 +95,8 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
           </button>
         </div>
 
-        {/* Right: Conditionally render Add Button */}
         {onAdd && (
-          <div className="sm:ml-0">
+          <div>
             <button
               onClick={onAdd}
               className="px-4 py-2 bg-[#09984B] text-white rounded-md hover:bg-[#016630] transition cursor-pointer"

@@ -47,6 +47,14 @@ const ViewStudent = () => {
         placeholder="Search by ID, name, or email..."
       />
 
+      {/* <Components.CRUDTable
+        columns={["ID", "Name", "Email", "Cluster", "Actions"]}
+        data={filteredData}
+        onEdit={handleEdit}
+        itemLabel="students"
+        addButtonLabel="Add Student"
+        onAdd={handleAddStudent}
+      /> */}
       <Components.CRUDTable
         columns={["ID", "Name", "Email", "Cluster", "Actions"]}
         data={filteredData}
@@ -54,6 +62,7 @@ const ViewStudent = () => {
         itemLabel="students"
         addButtonLabel="Add Student"
         onAdd={handleAddStudent}
+        idColumnIndex={0}
       />
     </div>
   );

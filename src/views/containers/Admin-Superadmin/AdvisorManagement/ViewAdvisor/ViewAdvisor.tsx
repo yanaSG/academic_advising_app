@@ -1,32 +1,55 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import * as Components from "../../../../components";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
 
-const advisorData = [
-  ["123456789", "John Leeroy Gadiane", "johnleeroy@example.com", "Cluster A"],
-  ["123456788", "Josephine Petralba", "josephine@example.com", "Cluster B"],
-  ["123456787", "Khiara Rubia", "khiara@example.com", "Cluster C"],
-];
+interface Advisor {
+  advisor_id: number;
+  name: string;
+  email: string;
+  cluster?: {
+    name: string;
+  } | null;
+}
 
 const ViewAdvisor = () => {
+  const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortValue, setSortValue] = useState("");
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
-  // Filtered and sorted data
-  const filteredData = advisorData
-    .filter(([id, name, email]) =>
-      [id, name, email].some((field) =>
-        field.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+
+  useEffect(() => {
+    axios
+      .get<Advisor[]>("http://127.0.0.1:8000/api/clustering/advisors/")
+      .then((res) => {
+        setAdvisors(res.data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch advisors:", err);
+      });
+  }, []);
+
+
+  const filteredData = advisors
+    .filter((advisor) =>
+      [advisor.advisor_id, advisor.name, advisor.email]
+        .map((f) => String(f).toLowerCase())
+        .some((val) => val.includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
-      if (sortValue === "name-asc") return a[1].localeCompare(b[1]);
-      if (sortValue === "name-desc") return b[1].localeCompare(a[1]);
-      if (sortValue === "id-asc") return String(a[0]).localeCompare(String(b[0]));
-      if (sortValue === "id-desc") return String(b[0]).localeCompare(String(a[0]));
+      if (sortValue === "name-asc") return a.name.localeCompare(b.name);
+      if (sortValue === "name-desc") return b.name.localeCompare(a.name);
+      if (sortValue === "id-asc") return String(a.advisor_id).localeCompare(String(b.advisor_id));
+      if (sortValue === "id-desc") return String(b.advisor_id).localeCompare(String(a.advisor_id));
       return 0;
-    });
+    })
+    .map((advisor) => [
+      advisor.advisor_id,
+      advisor.name,
+      advisor.email,
+      advisor.cluster?.name || "No Cluster",
+    ]);
 
   const handleEdit = (index: number) => {
     console.log("Edit advisor at index", index);
@@ -49,7 +72,7 @@ const ViewAdvisor = () => {
       />
 
       <Components.CRUDTable
-        columns={["ID", "Name", "Email", "Cluster", "Actions"]}
+        columns={["Advisor ID", "Name", "Email", "Cluster", "Actions"]}
         data={filteredData}
         onEdit={handleEdit}
         itemLabel="advisors"

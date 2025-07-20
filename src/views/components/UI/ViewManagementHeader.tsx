@@ -4,7 +4,7 @@ import AdminFilter from './AdminFilter'
 import AdminButton from './AdminButton'
 import { IoAddOutline } from 'react-icons/io5'
 // import { rooms } from "./../Feature/RoomListInterface"
-import { useRooms } from '../../../context/RoomContext'
+import { useRooms } from '../../../contexts/RoomContext'
 import { sampleBookingList as bookings } from '../Feature/UserBookingListInterface'
 import { useNavigate } from 'react-router'
 
