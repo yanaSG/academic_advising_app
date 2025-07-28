@@ -40,18 +40,18 @@ const ViewAdvisor: React.FC = () => {
     adv.name,
     adv.email,
     getClusterName(adv.cluster),
-    <div className="flex flex-row gap-2 items-centerv" key={adv.id}>
+    <div className="flex flex-row gap-1 items-centerv" key={adv.id}>
       <button
         onClick={() => navigate(`/admin/advisors/edit/${adv.id}`)}
-        className="text-blue-600 cursor-pointer"
+        className="text-[#09984B] border rounded-full px-2 py-1 flex items-center gap-1"
       >
-        <FaEdit size={22}/>
+        Edit<FaEdit/>
       </button>
       <button
         onClick={() => setToDelete(adv)}
-        className="text-red-600 cursor-pointer"
+        className="text-red-600 border rounded-full px-2 py-1 flex items-center gap-1"
       >
-        <FaTrashAlt size={20}/>
+        <FaTrashAlt/>
       </button>
     </div>
   ]);
@@ -68,6 +68,10 @@ const ViewAdvisor: React.FC = () => {
     }
   };
 
+  const handleAddAdvisor = () => {
+    navigate('/admin/advisors/add');
+  };
+
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">ADVISOR MANAGEMENT</h2>
@@ -80,19 +84,12 @@ const ViewAdvisor: React.FC = () => {
         placeholder="Search by ID, name, or email..."
       />
 
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => navigate('/admin/advisors/add')}
-          className="px-4 py-2 bg-[#09984B] text-white rounded hover:bg-[#016630]"
-        >
-          Add Advisor
-        </button>
-      </div>
-
       <Components.CRUDTable
         columns={["Advisor ID", "Name", "Email", "Cluster", "Actions"]}
         data={tableData}
         itemLabel="advisor"
+        addButtonLabel="Add Advisor"
+        onAdd={handleAddAdvisor}
       />
 
     {/* Delete Confirmation Modal */}
