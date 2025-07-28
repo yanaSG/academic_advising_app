@@ -58,6 +58,10 @@ export const PATHS = {
             ADD: {
                 path: "advisors/add",
                 label: "Add Advisors"
+            },
+            EDIT: {
+                path: "advisors/edit/:id",
+                label: "Edit Advisors"
             }
         },
         CLUSTER_MGNT: {

@@ -1,51 +1,51 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+// src/views/containers/Admin-Superadmin/ClusterManagement/ViewCluster/ViewCluster.tsx
+import React, { useState, useContext } from "react";
 import * as Components from "../../../../components";
+import { ClusteringContext } from "../../../../../contexts/clustering";
+import { useNavigate } from 'react-router-dom';
 
-const ViewCluster = () => {
+const ViewCluster: React.FC = () => {
+  const { clusters, loading } = useContext(ClusteringContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortValue, setSortValue] = useState("");
-  const [clusterData, setClusterData] = useState<(string | number)[][]>([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  const handleEdit = (index: number) => {
-    console.log("Edit cluster at index", index);
-  };
+  // build raw table data
+  const tableData = clusters.map((c) => [
+    c.cluster_id,
+    c.name,
+    // find advisor name by looking up in context.advisors if you need
+    c.advisor_name
+      ? clusters.find((cl) => cl.id === c.id && cl.advisor_name === c.advisor_name)?.advisor_name
+      : "No Advisor",
+    c.student_count,
+  ]);
 
-  useEffect(() => {
-    const fetchClusters = async () => {
-      try {
-        const response = await axios.get("http://127.0.0.1:8000/api/clustering/clusters/");
-        const formattedData = (response.data as any[]).map((cluster) => [
-          cluster.cluster_id,
-          cluster.name,
-          cluster.advisor?.name || "No Advisor",
-          cluster.student_count || 0,
-        ]);
-        setClusterData(formattedData);
-      } catch (error) {
-        console.error("Error fetching clusters:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchClusters();
-  }, []);
-
-  const filteredData = clusterData
-    .filter(([id, name, advisor]) =>
-      [id, name, advisor].some((field) =>
-        String(field).toLowerCase().includes(searchTerm.toLowerCase())
-      )
+  // filter & sort exactly like you had it
+  const filtered = tableData
+    .filter(([id, name, adv]) =>
+      [id, name, adv]
+        .map(String)
+        .some((field) => field.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
-      if (sortValue === "name-asc") return String(a[1]).localeCompare(String(b[1]));
-      if (sortValue === "name-desc") return String(b[1]).localeCompare(String(a[1]));
-      if (sortValue === "id-asc") return String(a[0]).localeCompare(String(b[0]));
-      if (sortValue === "id-desc") return String(b[0]).localeCompare(String(a[0]));
-      return 0;
+      switch (sortValue) {
+        case "name-asc":
+          return String(a[1]).localeCompare(String(b[1]));
+        case "name-desc":
+          return String(b[1]).localeCompare(String(a[1]));
+        case "id-asc":
+          return String(a[0]).localeCompare(String(b[0]));
+        case "id-desc":
+          return String(b[0]).localeCompare(String(a[0]));
+        default:
+          return 0;
+      }
     });
+
+  const handleEdit = (rowIndex: number) => {
+    navigate(`/admin/clusters/edit/${clusters[rowIndex].id}`)
+  };
 
   return (
     <div className="p-4">
@@ -60,14 +60,20 @@ const ViewCluster = () => {
       />
 
       {loading ? (
-        <div className="text-gray-500">Loading clusters...</div>
+        <div className="text-gray-500">Loading clusters…</div>
       ) : (
         <Components.CRUDTable
-          columns={["ID", "Name", "Advisor In Charge", "# of Students", "Actions"]}
-          data={filteredData}
+          columns={[
+            "ID",
+            "Name",
+            "Advisor In Charge",
+            "# of Students",
+            "Actions",
+          ]}
+          data={filtered}
           onEdit={handleEdit}
           itemLabel="clusters"
-          idColumnIndex={0} // assumes ID is in column index 0
+          idColumnIndex={0}
         />
       )}
     </div>

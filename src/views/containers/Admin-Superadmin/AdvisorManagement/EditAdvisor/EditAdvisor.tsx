@@ -1,38 +1,59 @@
-// src/views/containers/Admin-Superadmin/AdvisorManagement/AddAdvisor/AddAdvisor.tsx
-import React, { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
-import { ClusteringContext } from "../../../../../contexts/clustering";
-import type { Cluster } from "../../../../../contexts/clustering";
+// src/views/containers/Admin-Superadmin/AdvisorManagement/EditAdvisor/EditAdvisor.tsx
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
+import { ClusteringContext } from '../../../../../contexts/clustering';
+import type { Cluster, Advisor } from '../../../../../contexts/clustering';
 
-const AddAdvisor: React.FC = () => {
+const EditAdvisor: React.FC = () => {
   const navigate = useNavigate();
-  const { availableClusters, createAdvisor } = useContext(ClusteringContext);
+  const { id } = useParams<{ id: string }>();
+  const advisorIdNum = Number(id);
 
-  const [advisorId, setAdvisorId] = useState("");
-  const [advisorName, setAdvisorName] = useState("");
-  const [advisorEmail, setAdvisorEmail] = useState("");
-  const [clusterId, setClusterId] = useState<number | "">("");
+  const { advisors, availableClusters, updateAdvisor } = useContext(ClusteringContext);
+  const existing = advisors.find((a) => a.id === advisorIdNum);
+
+  // State mirrors form fields
+  const [advisorId, setAdvisorId] = useState('');
+  const [advisorName, setAdvisorName] = useState('');
+  const [advisorEmail, setAdvisorEmail] = useState('');
+  const [clusterId, setClusterId] = useState<number | ''>('');
+
+  // Populate when loaded
+  useEffect(() => {
+    if (existing) {
+      setAdvisorId(existing.advisor_id);
+      setAdvisorName(existing.name);
+      setAdvisorEmail(existing.email);
+      setClusterId(existing.cluster ?? '');
+    }
+  }, [existing]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!existing) return;
     try {
-      await createAdvisor({
+      await updateAdvisor(existing.id, {
         advisor_id: advisorId,
         name: advisorName,
         email: advisorEmail,
-        cluster: clusterId === "" ? null : clusterId,
+        cluster: clusterId === '' ? null : clusterId,
       });
-      navigate("/admin/advisors/view");
+      navigate('/admin/advisors/view');
       window.location.reload();
+      
     } catch (err) {
-      console.error("Failed to add advisor:", err);
+      console.error('Failed to update advisor:', err);
     }
   };
 
   const handleBack = () => {
-    navigate("/admin/advisors/view");
+    navigate('/admin/advisors/view');
   };
+
+  if (!existing) {
+    return <div className="p-4 text-red-600">Advisor not found.</div>;
+  }
 
   return (
     <div className="p-4">
@@ -48,7 +69,7 @@ const AddAdvisor: React.FC = () => {
         onSubmit={handleSubmit}
         className="bg-white rounded-lg shadow-md p-6 w-full flex flex-col gap-6"
       >
-        <h2 className="text-2xl font-bold mb-4">ADD ADVISOR</h2>
+        <h2 className="text-2xl font-bold mb-4">EDIT ADVISOR</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
@@ -97,7 +118,7 @@ const AddAdvisor: React.FC = () => {
             <select
               value={clusterId}
               onChange={(e) =>
-                setClusterId(e.target.value === "" ? "" : Number(e.target.value))
+                setClusterId(e.target.value === '' ? '' : Number(e.target.value))
               }
               className="w-full px-4 py-2 border-[#777777] border rounded-md focus:outline-none focus:ring focus:ring-[#09984B]"
             >
@@ -116,7 +137,7 @@ const AddAdvisor: React.FC = () => {
             type="submit"
             className="w-fit px-6 py-2 bg-[#09984B] text-white rounded-md hover:bg-[#016630] transition cursor-pointer"
           >
-            Add Advisor
+            Update Advisor
           </button>
         </div>
       </form>
@@ -124,4 +145,4 @@ const AddAdvisor: React.FC = () => {
   );
 };
 
-export default AddAdvisor;
+export default EditAdvisor;

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 
-const AddStudent = () => {
+const AddStudent: React.FC = () => {
   const [parsedData, setParsedData] = useState<(string | number)[][]>([]);
   const navigate = useNavigate();
 
@@ -10,8 +10,9 @@ const AddStudent = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Placeholder for CSV parsing logic
-    setParsedData([]); // Ensures re-render
+    // TODO: Implement CSV parsing logic
+    // Example: parse CSV and call setParsedData(parsedRows);
+    setParsedData([]);
   };
 
   const handleBack = () => {
@@ -49,7 +50,7 @@ const AddStudent = () => {
         <table className="min-w-full text-sm text-left">
           <thead className="bg-white text-[#4B5563] uppercase sticky top-0 z-10 shadow-md">
             <tr>
-              {["ID", "Name", "Email", "Assigned Cluster"].map((col, idx) => (
+              {['ID', 'Name', 'Email', 'Assigned Cluster'].map((col, idx) => (
                 <th key={idx} className="px-4 py-3.5">
                   {col}
                 </th>
@@ -71,7 +72,7 @@ const AddStudent = () => {
                 <tr
                   key={rowIndex}
                   className={`transition hover:bg-gray-50 text-[#4B5563] font-semibold ${
-                    rowIndex % 2 === 0 ? "bg-white" : "bg-[#F3F4F6]"
+                    rowIndex % 2 === 0 ? 'bg-white' : 'bg-[#F3F4F6]'
                   }`}
                 >
                   {row.map((cell, cellIndex) => (
