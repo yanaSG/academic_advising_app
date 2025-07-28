@@ -4,13 +4,15 @@ import { useNavigate } from "react-router-dom";
 
 interface CRUDTableProps {
   columns: string[];
-  data: (string | number)[][];
-  onEdit: (rowIndex: number) => void;
+  // Allow React nodes (e.g. JSX elements) in table cells
+  data: (string | number | React.ReactNode)[][];
+  // Optional edit callback if you choose to use it instead of inline buttons
+  onEdit?: (rowIndex: number) => void;
   itemsPerPage?: number;
-  itemLabel?: string;        // Used for labeling
+  itemLabel?: string;
   addButtonLabel?: string;
   onAdd?: () => void;
-  idColumnIndex?: number;    // Index for the unique ID field
+  idColumnIndex?: number;
 }
 
 const CRUDTable: React.FC<CRUDTableProps> = ({
@@ -38,7 +40,9 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
         <thead className="bg-white text-[#4B5563] uppercase sticky top-0 z-10 shadow-md">
           <tr>
             {columns.map((col, idx) => (
-              <th key={idx} className="px-4 py-3.5">{col}</th>
+              <th key={idx} className="px-4 py-3.5">
+                {col}
+              </th>
             ))}
           </tr>
         </thead>
@@ -51,19 +55,21 @@ const CRUDTable: React.FC<CRUDTableProps> = ({
               }`}
             >
               {row.map((cell, cellIndex) => (
-                <td key={cellIndex} className="px-4 py-4.5">{cell}</td>
+                <td key={cellIndex} className="px-4 py-4.5">
+                  {cell}
+                </td>
               ))}
-              <td className="px-4 py-2">
-                <button
-                  onClick={() => {
-                    const id = row[idColumnIndex];
-                    navigate(`/admin/${itemLabel}/edit/${id}`);
-                  }}
-                  className="text-[#09984B] border rounded-full px-2 py-1 flex flex-row items-center justify-center gap-1"
-                >
-                  Edit <FaEdit />
-                </button>
-              </td>
+              {/* Optional Edit button if callback provided */}
+              {onEdit && (
+                <td className="px-4 py-2">
+                  <button
+                    onClick={() => onEdit(rowIndex)}
+                    className="text-[#09984B] border rounded-full px-2 py-1 flex items-center gap-1"
+                  >
+                    Edit <FaEdit />
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
