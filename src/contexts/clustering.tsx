@@ -16,6 +16,7 @@ export interface Cluster {
   name: string;
   description: string;
   advisor: number | null;
+  advisor_name?: string | null;
   student_count: number;
 }
 
@@ -43,32 +44,32 @@ interface ClusteringContextType {
   availableClusters: Cluster[];
   loading: boolean;
   reloadData: () => void;
+
   createAdvisor: (payload: Omit<Advisor, 'id'>) => Promise<Advisor>;
   updateAdvisor: (id: number, payload: Omit<Advisor, 'id'>) => Promise<Advisor>;
   deleteAdvisor: (id: number) => Promise<void>;
 }
 
-// Default context
 export const ClusteringContext = createContext<ClusteringContextType>({
   clusters: [],
   students: [],
   advisors: [],
   availableClusters: [],
   loading: true,
-  reloadData: () => {},
+  reloadData: () => Promise.resolve(),
+
   createAdvisor: async () => { throw new Error('createAdvisor not implemented'); },
   updateAdvisor: async () => { throw new Error('updateAdvisor not implemented'); },
   deleteAdvisor: async () => { throw new Error('deleteAdvisor not implemented'); },
 });
 
-// Provider
 export const ClusteringProvider = ({ children }: { children: ReactNode }) => {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  // availableClusters derived from clusters where no advisor assigned
+  // Unassigned clusters only
   const availableClusters = useMemo(
     () => clusters.filter(c => c.advisor === null),
     [clusters]
@@ -76,90 +77,80 @@ export const ClusteringProvider = ({ children }: { children: ReactNode }) => {
 
   const baseURL = 'http://127.0.0.1:8000/api/clustering';
 
+  // Fetch everything
   const fetchData = async () => {
     setLoading(true);
-
-    // Fetch advisors
     try {
-      const res = await axios.get<Advisor[]>(`${baseURL}/advisors/`);
-      setAdvisors(res.data);
+      const [advRes, clusterRes, stuRes] = await Promise.all([
+        axios.get<Advisor[]>(`${baseURL}/advisors/`),
+        axios.get<Cluster[]>(`${baseURL}/clusters/`),
+        axios.get<Student[]>(`${baseURL}/students/`),
+      ]);
+      setAdvisors(advRes.data);
+      setClusters(clusterRes.data);
+      setStudents(stuRes.data);
     } catch (err) {
-      console.error('❌ Error fetching advisors:', err);
-      setAdvisors([]);
+      console.error('❌ Error fetching data:', err);
+    } finally {
+      setLoading(false);
     }
-
-    // Fetch clusters
-    try {
-      const res = await axios.get<Cluster[]>(`${baseURL}/clusters/`);
-      setClusters(res.data);
-    } catch (err) {
-      console.error('❌ Error fetching clusters:', err);
-      setClusters([]);
-    }
-
-    // Fetch students
-    try {
-      const res = await axios.get<Student[]>(`${baseURL}/students/`);
-      setStudents(res.data);
-    } catch (err) {
-      console.error('❌ Error fetching students:', err);
-      setStudents([]);
-    }
-
-    setLoading(false);
   };
 
-  // Create advisor
+  // Create an advisor, then re-fetch to sync clusters AND advisors
   const createAdvisor = async (payload: Omit<Advisor, 'id'>): Promise<Advisor> => {
     setLoading(true);
     try {
       const response = await apiCreateAdvisor(payload);
-      setAdvisors(prev => [...prev, response.data]);
+      // full refresh ensures clusters.advisor is updated
+      await fetchData();
       return response.data;
     } finally {
       setLoading(false);
     }
   };
 
-  // Update advisor
+  // Update an advisor, then re-fetch
   const updateAdvisor = async (id: number, payload: Omit<Advisor, 'id'>): Promise<Advisor> => {
     setLoading(true);
     try {
       const response = await apiUpdateAdvisor(id, payload);
-      setAdvisors(prev => prev.map(a => a.id === id ? response.data : a));
+      await fetchData();
       return response.data;
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete advisor
+  // Delete an advisor, then re-fetch
   const deleteAdvisor = async (id: number): Promise<void> => {
     setLoading(true);
     try {
       await apiDeleteAdvisor(id);
-      setAdvisors(prev => prev.filter(a => a.id !== id));
+      await fetchData();
     } finally {
       setLoading(false);
     }
   };
 
+  // on mount
   useEffect(() => {
     fetchData();
   }, []);
 
   return (
-    <ClusteringContext.Provider value={{
-      clusters,
-      students,
-      advisors,
-      availableClusters,
-      loading,
-      reloadData: fetchData,
-      createAdvisor,
-      updateAdvisor,
-      deleteAdvisor,
-    }}>
+    <ClusteringContext.Provider
+      value={{
+        clusters,
+        students,
+        advisors,
+        availableClusters,
+        loading,
+        reloadData: fetchData,
+        createAdvisor,
+        updateAdvisor,
+        deleteAdvisor,
+      }}
+    >
       {children}
     </ClusteringContext.Provider>
   );
