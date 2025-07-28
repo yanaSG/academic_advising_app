@@ -1,23 +1,40 @@
-import React from 'react';
+import React, { useEffect, useContext } from 'react';
 import {
     Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart,
 } from 'recharts';
-
-const data = [
-    { yearLevel: '1st Year', students: 150, percentage: 35 },
-    { yearLevel: '2nd Year', students: 120, percentage: 28 },
-    { yearLevel: '3rd Year', students: 100, percentage: 23 },
-    { yearLevel: '4th Year', students: 60, percentage: 14 },
-];
+import { ClusteringContext, type StudentsPerLevelData } from '../../../contexts/clustering'; // Path to your ClusteringContext
 
 const StudentsPerLevel: React.FC = () => {
+    const context = useContext(ClusteringContext);
+
+    if (!context) {
+        throw new Error('StudentsPerLevel must be used within a ClusteringProvider');
+    }
+
+    const { studentsPerLevelData, graphDataLoading, fetchGraphDataByType } = context;
+
+    useEffect(() => {
+        // Fetch data when component mounts or if it's empty and not already loading
+        if (studentsPerLevelData.length === 0 && !graphDataLoading) {
+            fetchGraphDataByType('students_per_level');
+        }
+    }, [studentsPerLevelData, graphDataLoading, fetchGraphDataByType]); // Dependencies to re-run effect
+
+    if (graphDataLoading && studentsPerLevelData.length === 0) {
+        return <div className="text-center py-4">Loading Students per Year Level data...</div>;
+    }
+
+    if (studentsPerLevelData.length === 0) {
+        return <div className="text-center py-4 text-gray-500">No Students per Year Level data available.</div>;
+    }
+
     return (
         <div className='h-full w-full mt-4'>
             <h2 className='text-center font-bold text-[#1F2937] mb-3'>
             Number of Students per Year Level
             </h2>
-            <ResponsiveContainer>
-            <ComposedChart data={data}>
+            <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={studentsPerLevelData}>
                 <CartesianGrid stroke="#eee" strokeDasharray="3 3" />
                 <XAxis
                     dataKey="yearLevel"

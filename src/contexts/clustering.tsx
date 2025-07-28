@@ -9,10 +9,24 @@ import {
   deleteAdvisor as apiDeleteAdvisor,
 } from '../services/advisorService';
 
+import {
+  fetchGraphData as apiFetchGraphData,
+  fetchStudentCount as apiFetchStudentCount,
+  fetchAdvisorCount as apiFetchAdvisorCount,
+} from '../services/dashboardService';
+
+import {
+  fetchStudents as apiFetchStudents,
+  createStudent as apiCreateStudent,
+  updateStudent as apiUpdateStudent,
+  deleteStudent as apiDeleteStudent,
+  uploadCSV as apiUploadCSV,
+} from '../services/studentService';
+
 // Types
 export interface Cluster {
   id: number;
-  cluster_id: string;
+  cluster_id: number;
   name: string;
   description: string;
   advisor: number | null;
@@ -36,6 +50,31 @@ export interface Student {
   cluster: number | null;
 }
 
+// Graph Data Types
+export interface StudentsPerLevelData {
+  yearLevel: string;
+  students: number;
+  percentage: number;
+}
+
+export interface StudentsPerProgramData {
+  program: string;
+  students: number;
+  percentage: number;
+}
+
+export interface StudentClusterDataset {
+  label: string;
+  data: { x: number; y: number }[];
+  backgroundColor: string;
+  pointRadius: number;
+}
+
+export interface StudentClustersData {
+  datasets: StudentClusterDataset[];
+}
+
+
 // Context value shape
 interface ClusteringContextType {
   clusters: Cluster[];
@@ -48,6 +87,22 @@ interface ClusteringContextType {
   createAdvisor: (payload: Omit<Advisor, 'id'>) => Promise<Advisor>;
   updateAdvisor: (id: number, payload: Omit<Advisor, 'id'>) => Promise<Advisor>;
   deleteAdvisor: (id: number) => Promise<void>;
+
+  // New graph data states and fetchers
+  studentsPerLevelData: StudentsPerLevelData[];
+  studentsPerProgramData: StudentsPerProgramData[];
+  studentClustersData: StudentClustersData;
+  studentCount: number | null;
+  advisorCount: number | null;
+  graphDataLoading: boolean;
+  lastFetchedClusterFeature: string | null; // NEW: To track the last fetched secondary feature
+  fetchGraphDataByType: (graphType: string, secondaryFeature?: string) => Promise<any>;
+
+  fetchStudents: () => Promise<Student[]>;
+  createStudent: (payload: Omit<Student, 'id'>) => Promise<Student>;
+  updateStudent: (id: number, payload: Omit<Student, 'id'>) => Promise<Student>;
+  deleteStudent: (id: number) => Promise<void>;
+  uploadCSV: (file: File) => Promise<any>;
 }
 
 export const ClusteringContext = createContext<ClusteringContextType>({
@@ -61,47 +116,104 @@ export const ClusteringContext = createContext<ClusteringContextType>({
   createAdvisor: async () => { throw new Error('createAdvisor not implemented'); },
   updateAdvisor: async () => { throw new Error('updateAdvisor not implemented'); },
   deleteAdvisor: async () => { throw new Error('deleteAdvisor not implemented'); },
+
+  studentsPerLevelData: [],
+  studentsPerProgramData: [],
+  studentClustersData: { datasets: [] },
+  studentCount: null,
+  advisorCount: null,
+  graphDataLoading: false,
+  lastFetchedClusterFeature: null, // NEW: Initialize to null
+  fetchGraphDataByType: async () => { throw new Error('fetchGraphDataByType not implemented'); },
+
+  fetchStudents: async () => { throw new Error('fetchStudents not implemented'); },
+  createStudent: async () => { throw new Error('createStudent not implemented'); },
+  updateStudent: async () => { throw new Error('updateStudent not implemented'); },
+  deleteStudent: async () => { throw new Error('deleteStudent not implemented'); },
+  uploadCSV: async () => { throw new Error('uploadCSV not implemented'); },
 });
 
-export const ClusteringProvider = ({ children }: { children: ReactNode }) => {
+interface ClusteringProviderProps {
+  children: ReactNode;
+}
+
+export const ClusteringProvider: React.FC<ClusteringProviderProps> = ({ children }) => {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Unassigned clusters only
-  const availableClusters = useMemo(
-    () => clusters.filter(c => c.advisor === null),
-    [clusters]
-  );
+  // New states for graph data
+  const [studentsPerLevelData, setStudentsPerLevelData] = useState<StudentsPerLevelData[]>([]);
+  const [studentsPerProgramData, setStudentsPerProgramData] = useState<StudentsPerProgramData[]>([]);
+  const [studentClustersData, setStudentClustersData] = useState<StudentClustersData>({ datasets: [] });
+  const [lastFetchedClusterFeature, setLastFetchedClusterFeature] = useState<string | null>(null); // NEW state
+  const [studentCount, setStudentCount] = useState<number | null>(null);
+  const [advisorCount, setAdvisorCount] = useState<number | null>(null);
+  const [graphDataLoading, setGraphDataLoading] = useState<boolean>(false);
 
-  const baseURL = 'http://127.0.0.1:8000/api/clustering';
-
-  // Fetch everything
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [advRes, clusterRes, stuRes] = await Promise.all([
-        axios.get<Advisor[]>(`${baseURL}/advisors/`),
-        axios.get<Cluster[]>(`${baseURL}/clusters/`),
-        axios.get<Student[]>(`${baseURL}/students/`),
+      const [clustersRes, studentsRes, advisorsRes] = await Promise.all([
+        axios.get<Cluster[]>('http://127.0.0.1:8000/api/clustering/clusters/'),
+        axios.get<Student[]>('http://127.0.0.1:8000/api/clustering/students/'),
+        axios.get<Advisor[]>('http://127.0.0.1:8000/api/clustering/advisors/'),
       ]);
-      setAdvisors(advRes.data);
-      setClusters(clusterRes.data);
-      setStudents(stuRes.data);
+
+      setClusters(clustersRes.data);
+      setStudents(studentsRes.data);
+      setAdvisors(advisorsRes.data);
     } catch (err) {
-      console.error('❌ Error fetching data:', err);
+      console.error('Failed to fetch initial data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Create an advisor, then re-fetch to sync clusters AND advisors
+  // Updated function to fetch specific graph data by type and secondary feature
+  const fetchGraphDataByType = async (graphType: string, secondaryFeature?: string) => {
+    setGraphDataLoading(true);
+    try {
+      const result = await apiFetchGraphData(graphType, secondaryFeature);
+      if (graphType === 'students_per_level') {
+        setStudentsPerLevelData(result.data);
+      } else if (graphType === 'students_per_program') {
+        setStudentsPerProgramData(result.data);
+      } else if (graphType === 'student_clusters') {
+        setStudentClustersData(result.data);
+        setLastFetchedClusterFeature(secondaryFeature || null); // NEW: Update the last fetched feature
+      }
+      return result.data;
+    } catch (err) {
+      console.error(`Failed to fetch ${graphType} data:`, err);
+      return null;
+    } finally {
+      setGraphDataLoading(false);
+    }
+  };
+
+  const fetchCounts = async () => {
+    setGraphDataLoading(true);
+    try {
+      const [studentCountRes, advisorCountRes] = await Promise.all([
+        apiFetchStudentCount(),
+        apiFetchAdvisorCount(),
+      ]);
+      setStudentCount(studentCountRes.data.student_count);
+      setAdvisorCount(advisorCountRes.data.advisor_count);
+    } catch (err) {
+      console.error('Failed to fetch counts:', err);
+    } finally {
+      setGraphDataLoading(false);
+    }
+  };
+
+
   const createAdvisor = async (payload: Omit<Advisor, 'id'>): Promise<Advisor> => {
     setLoading(true);
     try {
       const response = await apiCreateAdvisor(payload);
-      // full refresh ensures clusters.advisor is updated
       await fetchData();
       return response.data;
     } finally {
@@ -109,7 +221,6 @@ export const ClusteringProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Update an advisor, then re-fetch
   const updateAdvisor = async (id: number, payload: Omit<Advisor, 'id'>): Promise<Advisor> => {
     setLoading(true);
     try {
@@ -121,7 +232,6 @@ export const ClusteringProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Delete an advisor, then re-fetch
   const deleteAdvisor = async (id: number): Promise<void> => {
     setLoading(true);
     try {
@@ -132,10 +242,58 @@ export const ClusteringProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // on mount
+  const createStudent = async (payload: Omit<Student, 'id'>): Promise<Student> => {
+    setLoading(true);
+    try {
+      const response = await apiCreateStudent(payload);
+      await fetchData(); // Re-fetch all data to update student list and counts
+      return response.data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStudent = async (id: number, payload: Omit<Student, 'id'>): Promise<Student> => {
+    setLoading(true);
+    try {
+      const response = await apiUpdateStudent(id, payload);
+      await fetchData();
+      return response.data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteStudent = async (id: number): Promise<void> => {
+    setLoading(true);
+    try {
+      await apiDeleteStudent(id);
+      await fetchData();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadCSV = async (file: File): Promise<any> => {
+    setLoading(true);
+    try {
+      const response = await apiUploadCSV(file);
+      await fetchData(); // Re-fetch all data after CSV upload
+      await fetchCounts(); // Also re-fetch counts as new students might be added
+      return response.data;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchCounts();
   }, []);
+
+  const availableClusters = useMemo(() => {
+    return clusters.filter(cluster => !cluster.advisor);
+  }, [clusters]);
 
   return (
     <ClusteringContext.Provider
@@ -146,9 +304,30 @@ export const ClusteringProvider = ({ children }: { children: ReactNode }) => {
         availableClusters,
         loading,
         reloadData: fetchData,
+
         createAdvisor,
         updateAdvisor,
         deleteAdvisor,
+
+        studentsPerLevelData,
+        studentsPerProgramData,
+        studentClustersData,
+        studentCount,
+        advisorCount,
+        graphDataLoading,
+        lastFetchedClusterFeature,
+        fetchGraphDataByType,
+
+        fetchStudents: () => new Promise<Student[]>((resolve, reject) => {
+          apiFetchStudents().then(
+            (res: any) => resolve(res.data),
+            (err: any) => reject(err)
+          );
+        }),
+        createStudent,
+        updateStudent,
+        deleteStudent,
+        uploadCSV,
       }}
     >
       {children}

@@ -1,30 +1,47 @@
 // src/views/containers/Admin-Superadmin/ClusterManagement/ViewCluster/ViewCluster.tsx
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import * as Components from "../../../../components";
-import { ClusteringContext } from "../../../../../contexts/clustering";
+import { ClusteringContext, type Cluster, type Advisor } from "../../../../../contexts/clustering"; // Adjust path to your context
 import { useNavigate } from 'react-router-dom';
+import { FaEdit } from "react-icons/fa"; // Assuming you use this icon
 
 const ViewCluster: React.FC = () => {
-  const { clusters, loading } = useContext(ClusteringContext);
+  const { clusters, advisors, loading } = useContext(ClusteringContext); // Get clusters, advisors, loading, fetchData
   const [searchTerm, setSearchTerm] = useState("");
   const [sortValue, setSortValue] = useState("");
   const navigate = useNavigate();
 
+  // Effect to fetch data on component mount
+  useEffect(() => {
+    // fetchData is already called on mount in ClusteringProvider,
+    // but calling it here ensures this specific view's data is fresh if needed.
+    // However, it might cause redundant fetches if not managed carefully.
+    // For now, we rely on the context's initial fetch.
+    // If you need to force a refresh specific to this view, uncomment:
+    // fetchData();
+  }, []);
+
+  // Helper to get advisor name
+  const getAdvisorName = (advisorId: number | null): string => {
+    if (advisorId === null) {
+      return "No Advisor";
+    }
+    const advisor = advisors.find((adv: Advisor) => adv.id === advisorId);
+    return advisor ? advisor.name : "Unknown Advisor";
+  };
+
   // build raw table data
-  const tableData = clusters.map((c) => [
-    c.cluster_id,
+  const tableData = clusters.map((c: Cluster) => [
+    String(c.cluster_id), // Ensure cluster_id is string for display/filtering
     c.name,
-    // find advisor name by looking up in context.advisors if you need
-    c.advisor_name
-      ? clusters.find((cl) => cl.id === c.id && cl.advisor_name === c.advisor_name)?.advisor_name
-      : "No Advisor",
-    c.student_count,
+    getAdvisorName(c.advisor), // Use helper to get advisor name
+    String(c.student_count), // Ensure student_count is string for display/filtering
   ]);
 
-  // filter & sort exactly like you had it
+  // filter & sort
   const filtered = tableData
-    .filter(([id, name, adv]) =>
-      [id, name, adv]
+    .filter(([id, name, advName]) => // Filter using advisor name from tableData
+      [id, name, advName] // Include advisor name in search
         .map(String)
         .some((field) => field.toLowerCase().includes(searchTerm.toLowerCase()))
     )
@@ -44,7 +61,11 @@ const ViewCluster: React.FC = () => {
     });
 
   const handleEdit = (rowIndex: number) => {
-    navigate(`/admin/clusters/edit/${clusters[rowIndex].id}`)
+    // Get the actual cluster ID from the original clusters array
+    const clusterToEdit = clusters[rowIndex];
+    if (clusterToEdit) {
+      navigate(`/admin/clusters/edit/${clusterToEdit.id}`);
+    }
   };
 
   return (
@@ -57,6 +78,9 @@ const ViewCluster: React.FC = () => {
         sortValue={sortValue}
         onSortChange={setSortValue}
         placeholder="Search by ID, name, or advisor..."
+        // Assuming you want an "Add Cluster" button here
+        // onAdd={() => navigate('/admin/clusters/add')}
+        // addButtonLabel="Add Cluster"
       />
 
       {loading ? (
@@ -66,14 +90,14 @@ const ViewCluster: React.FC = () => {
           columns={[
             "ID",
             "Name",
-            "Advisor In Charge",
-            "# of Students",
-            "Actions",
+            "Advisor",
+            "Student Count",
+            "Actions"
           ]}
           data={filtered}
+          itemLabel="cluster"
           onEdit={handleEdit}
-          itemLabel="clusters"
-          idColumnIndex={0}
+          // onDelete={handleDelete} // Implement delete if needed
         />
       )}
     </div>
