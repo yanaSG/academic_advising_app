@@ -28,41 +28,26 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-6rem)] flex flex-col">
-      <div className="max-h-max grid grid-cols-5 gap-4 p-4">
-        <AdminDashboardCard
-          label="Students Enrolled"
-          icon={<IoPeopleCircle className="size-10 text-amber-400" />}
-          value={13}
-        />
-        <AdminDashboardCard
-          label="Unassigned Students"
-          icon={<IoPeopleCircle className="size-10 text-gray-600" />}
-          value={13}
-        />
-        <AdminDashboardCard
-          label="Total Clusters Identified"
-          icon={<FaLayerGroup className="size-9 text-emerald-600" />}
-          value={2}
-        />
-        <AdminDashboardCard
-          label="Students in At-Risk Clusters"
-          icon={<IoWarning className="size-9 text-red-600" />}
-          value={15}
-        />
-        <AdminDashboardCard
-          label="Finished Bookings"
-          icon={<FaBookBookmark className="size-10 text-emerald-800" />}
-          value={2}
-        />
-      </div>
-      <div className="w-full h-full grid grid-cols-5 gap-4 px-4 pb-4">
-        <div className="col-span-2 h-full bg-white shadow-md rounded-lg p-4 flex flex-col gap-2">
+    <div className="w-full h-[calc(100vh-6rem)] grid grid-cols-2">
+      <div className="flex flex-col">
+        <div className="max-h-max grid grid-cols-2 gap-4 p-4">
+          <AdminDashboardCard
+            label="Students Enrolled"
+            icon={<IoPeopleCircle className="size-10 text-amber-400" />}
+            value={40}
+          />
+          <AdminDashboardCard
+            label="Professors"
+            icon={<IoPeopleCircle className="size-10 text-gray-600" />}
+            value={1}
+          />
+        </div>
+        <div className="col-span-2 h-120 bg-white shadow-md rounded-lg p-4 flex flex-col gap-2">
           <div className="w-full flex justify-between items-center">
             <h3 className="font-bold text-xl text-[#1F2937]">
               Students Summary
             </h3>
-            <div className="flex gap-2 flex items-center">
+            <div className="flex gap-2 items-center">
               <h4 className="font-semibold">View by:</h4>
               <AdminButton
                 label="Year Level"
@@ -93,10 +78,9 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-
-        <div className="col-span-3 bg-white shadow-md rounded-lg p-4 flex gap-2">
-          <StudentClusters />
-        </div>
+      </div>
+      <div className="h-148 bg-white shadow-md rounded-lg p-4 m-5 flex gap-2">
+        <StudentClusters />
       </div>
     </div>
   );
