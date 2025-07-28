@@ -1,17 +1,20 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import * as Components from "../../../../components";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 
-const studentData = [
-  ["20220001", "Alice Reyes", "alice@example.com", "Cluster A"],
-  ["20220002", "Brian Santos", "brian@example.com", "Cluster B"],
-  ["20220003", "Carla Dela Cruz", "carla@example.com", "Cluster C"],
-];
+type StudentRow = [string | number, string, string, string];
 
-const ViewStudent = () => {
-  const navigate = useNavigate(); 
+const ViewStudent: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortValue, setSortValue] = useState("");
+  const [studentData, setStudentData] = useState<StudentRow[]>([]);
+
+  useEffect(() => {
+    // TODO: Fetch or receive studentData here
+    // Example: API call to load student rows into state
+    // setStudentData(fetchedData);
+  }, []);
 
   const handleEdit = (index: number) => {
     console.log("Edit student at index", index);
@@ -23,9 +26,9 @@ const ViewStudent = () => {
 
   const filteredData = studentData
     .filter(([id, name, email]) =>
-      [id, name, email].some((field) =>
-        field.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      [id, name, email]
+        .map(String)
+        .some(field => field.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
       if (sortValue === "name-asc") return a[1].localeCompare(b[1]);
@@ -47,14 +50,6 @@ const ViewStudent = () => {
         placeholder="Search by ID, name, or email..."
       />
 
-      {/* <Components.CRUDTable
-        columns={["ID", "Name", "Email", "Cluster", "Actions"]}
-        data={filteredData}
-        onEdit={handleEdit}
-        itemLabel="students"
-        addButtonLabel="Add Student"
-        onAdd={handleAddStudent}
-      /> */}
       <Components.CRUDTable
         columns={["ID", "Name", "Email", "Cluster", "Actions"]}
         data={filteredData}
