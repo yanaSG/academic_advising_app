@@ -1,26 +1,23 @@
-// src/components/ProtectedRoute.tsx
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+// src/views/components/ProtectedRoute.tsx
+import React from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "../../contexts/authContext";
 
 interface ProtectedRouteProps {
-  roles?: string[];
-  children?: React.ReactNode;
+  redirectTo?: string;
 }
 
-export default function ProtectedRoute({ roles, children }: ProtectedRouteProps) {
-  const { user } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ redirectTo = "/login" }) => {
+  const { user, loading } = useAuth();
 
-  // if (loading) {
-  //   return <div>Loading...</div>; // Or a spinner
-  // }
+  // Optionally, you can show a loading spinner while checking auth
+  if (loading) return <div>Loading...</div>;
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  // If no user, redirect to login
+  if (!user) return <Navigate to={redirectTo} replace />;
 
-  if (roles && !roles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
-  }
+  // Otherwise, render nested routes
+  return <Outlet />;
+};
 
-  return <>{children ? children : <Outlet />}</>;
-}
+export default ProtectedRoute;

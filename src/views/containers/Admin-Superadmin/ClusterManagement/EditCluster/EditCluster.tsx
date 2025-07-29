@@ -123,24 +123,37 @@ const EditCluster: React.FC = () => {
               className="mt-1 w-full px-3 py-2 border rounded-md focus:ring-[#09984B]"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Advisor</label>
-            <select
-              value={advisorId}
-              onChange={(e) => setAdvisorId(e.target.value === '' ? '' : Number(e.target.value))}
-              className="mt-1 w-full px-3 py-2 border rounded-md focus:ring-[#09984B]"
-            >
-              <option value="">Unassigned</option>
-              {advisorOptions.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} ({a.email})
-                </option>
-              ))}
-            </select>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Advisor</label>
+            <div className="flex justify-between items-center gap-4">
+              <div className="flex-grow max-w-lg">
+                <select
+                  value={advisorId}
+                  onChange={(e) => setAdvisorId(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full px-3 py-2 border rounded-md focus:ring-[#09984B]"
+                >
+                  <option value="">Unassigned</option>
+                  {advisorOptions.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="px-6 py-2 bg-[#09984B] text-white rounded-md hover:bg-[#016630] transition whitespace-nowrap"
+              >
+                Update Cluster
+              </button>
+            </div>
           </div>
+
+
         </div>
 
-        <div className="mt-6 flex justify-between">
+        <div className="mt-10 flex justify-between">
           <div>
             <p className="text-sm text-gray-500">
               <strong>Students in this cluster:</strong> {students.length}
@@ -151,12 +164,12 @@ const EditCluster: React.FC = () => {
               ))}
             </ul>
           </div>
-          <button
+          {/* <button
             type="submit"
             className="px-6 py-2 bg-[#09984B] text-white rounded-md hover:bg-[#016630] transition"
           >
             Update Cluster
-          </button>
+          </button> */}
         </div>
       </form>
     </div>

@@ -5,6 +5,7 @@ import { IoNotifications } from "react-icons/io5";
 // import { CgProfile } from "react-icons/cg";
 import { IoMenu, IoClose } from "react-icons/io5";
 import ProfileDropdown from "./ProfileDropdown";
+import { useAuth } from "../../../../contexts/authContext.tsx";
 // import { useAuth } from '../../../../context/AuthContext';
 
 interface HeaderProps {
@@ -13,10 +14,10 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ nav, toggleNav }) => {
-  // const { user } = useAuth();
+  const { user } = useAuth();
 
   return (
-    <div className="sticky top-0 bg-green-800 h-25 flex items-center justify-between px-4">
+    <div className="sticky top-0 bg-green-800 h-25 flex items-center justify-between px-4 z-100">
       <div className="flex items-center gap-10">
         <div className="flex items-center gap-4 cursor-pointer">
           <img src={UsjrLogo} alt="Logo" className="h-20 cursor-pointer" />
@@ -47,7 +48,10 @@ const Header: React.FC<HeaderProps> = ({ nav, toggleNav }) => {
       <div className="sm:text-white sm:flex sm:items-center gap-10 hidden">
         <div className="flex items-center gap-4">
           {/* <p className='font-medium cursor-pointer'>{user!.fname} {user!.lname}</p> */}
-          <p className="font-medium cursor-pointer">John Doe</p>
+          <p className="font-medium cursor-pointer">
+            {user?.first_name || user?.fname || ""}{" "}
+            {user?.last_name || user?.lname || ""}
+          </p>
           <ProfileDropdown />
         </div>
       </div>

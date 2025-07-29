@@ -17,7 +17,8 @@ const CRUDHeader: React.FC<CRUDHeaderProps> = ({
   placeholder = "Search...",
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+    <div className="relative z-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+
       {/* Search Input */}
       <input
         type="text"
@@ -28,7 +29,7 @@ const CRUDHeader: React.FC<CRUDHeaderProps> = ({
       />
 
       {/* Custom Styled Sort Dropdown */}
-      <div className="relative w-full sm:w-auto">
+      <div className="relative w-full sm:w-auto z-[-999]">
         <select
           value={sortValue}
           onChange={(e) => onSortChange(e.target.value)}
