@@ -1,74 +1,82 @@
 import React, { useState, useEffect, useContext } from "react";
 import * as Components from "../../../../components";
 import { useNavigate } from "react-router-dom";
-import { ClusteringContext, type Student } from '../../../../../contexts/clustering'; // Adjust path to your context
+import { ClusteringContext, type Student } from '../../../../../contexts/clustering';
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
 
-// Define the type for a student row for the table display
-type StudentRow = [string, string, string | null, string | null]; // student_id, name, program_and_grade, cluster_name
+// Student Row: student_id, name, program_and_grade, cluster_name, actions
+type StudentRow = (string | React.ReactNode | null)[];
 
 const ViewStudent: React.FC = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortValue, setSortValue] = useState("");
-
   const context = useContext(ClusteringContext);
 
   if (!context) {
     throw new Error('ViewStudent must be used within a ClusteringProvider');
   }
 
-  const { students, clusters, loading } = context; // Get students, clusters, loading, and fetchData from context
+  const { students, clusters, loading, deleteStudent } = context;
 
-  // Effect to fetch data on component mount
-  useEffect(() => {
-    console.log("DEBUG: ViewStudent component mounted, fetching data...", students.length, clusters.length);
-    // fetchData is already called on mount in ClusteringProvider,
-    // but calling it here ensures this specific view's data is fresh if needed.
-    // However, it might cause redundant fetches if not managed carefully.
-    // For now, we rely on the context's initial fetch.
-    // If you need to force a refresh specific to this view, uncomment:
-    // fetchData();
-  }, []);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortValue, setSortValue] = useState("");
+  const [toDelete, setToDelete] = useState<Student | null>(null);
 
-  // Prepare table data from context students
-  const studentData: StudentRow[] = students.map((s: Student) => {
-    const clusterName = s.cluster !== null
-      ? (clusters.find(c => c.cluster_id === s.cluster)?.name || 'Unassigned')
-      : 'Unassigned';
-    return [
-      s.student_id,
-      s.name || 'N/A', // Handle null names
-      s.program_and_grade,
-      clusterName,
-    ];
-  });
-
-  const handleEdit = (rowIndex: number) => {
-    // Assuming you have an edit route like /admin/students/edit/:id
-    // You'll need the actual student ID from the 'students' array
-    const studentToEdit = students[rowIndex];
-    if (studentToEdit) {
-      navigate(`/admin/students/edit/${studentToEdit.id}`);
-    }
+  // Compute cluster name
+  const getClusterName = (clusterId?: number | null) => {
+    const cluster = clusters.find(c => c.id === clusterId);
+    return cluster ? cluster.name : 'Unassigned';
   };
 
-  const handleAddStudent = () => {
-    navigate("/admin/students/add");
-  };
-
-  const filteredData = studentData
-    .filter(([id, name, program, cluster]) =>
-      [id, name, program, cluster]
+  // Filter + Sort
+  const filteredStudents = students
+    .filter(s =>
+      [s.student_id, s.name, s.program_and_grade, getClusterName(s.cluster)]
         .map(String)
         .some(field => field.toLowerCase().includes(searchTerm.toLowerCase()))
     )
     .sort((a, b) => {
-      if (sortValue === "name-asc") return String(a[1]).localeCompare(String(b[1]));
-      if (sortValue === "name-desc") return String(b[1]).localeCompare(String(a[1]));
-      if (sortValue === "id-asc") return String(a[0]).localeCompare(String(b[0]));
-      if (sortValue === "id-desc") return String(b[0]).localeCompare(String(a[0]));
+      if (sortValue === "name-asc") return (a.name || '').localeCompare(b.name || '');
+      if (sortValue === "name-desc") return (b.name || '').localeCompare(a.name || '');
+      if (sortValue === "id-asc") return String(a.student_id).localeCompare(String(b.student_id));
+      if (sortValue === "id-desc") return String(b.student_id).localeCompare(String(a.student_id));
       return 0;
     });
+
+  // Build table data
+  const tableData: StudentRow[] = filteredStudents.map((s) => [
+    s.student_id,
+    s.name || "N/A",
+    s.program_and_grade,
+    getClusterName(s.cluster),
+    <div className="flex flex-row gap-1 items-center" key={s.id}>
+      <button
+        onClick={() => navigate(`/admin/students/edit/${s.id}`)}
+        className="text-[#09984B] border rounded-full px-2 py-1 flex items-center gap-1"
+      >
+        Edit <FaEdit />
+      </button>
+      <button
+        onClick={() => setToDelete(s)}
+        className="text-red-600 w-7 h-7 border rounded-full px-2 py-1 flex items-center gap-1"
+      >
+        <FaTrashAlt />
+      </button>
+    </div>
+  ]);
+
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    try {
+      await deleteStudent(toDelete.id);
+    } catch (err) {
+      console.error('Failed to delete student:', err);
+    } finally {
+      setToDelete(null);
+      window.location.reload(); // Refresh to reflect deletion
+    }
+  };
+
+  const handleAddStudent = () => navigate("/admin/students/add");
 
   return (
     <div className="p-4">
@@ -87,13 +95,40 @@ const ViewStudent: React.FC = () => {
       ) : (
         <Components.CRUDTable
           columns={["Student ID", "Name", "Program & Grade", "Cluster", "Actions"]}
-          data={filteredData}
+          data={tableData}
           itemLabel="student"
           addButtonLabel="Add Student (CSV)"
           onAdd={handleAddStudent}
-          onEdit={handleEdit}
-          // onDelete={handleDelete} // Implement delete if needed
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {toDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+        >
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4">Confirm Delete</h3>
+            <p className="mb-6">
+              Are you sure you want to delete student <strong>{toDelete.name}</strong>?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setToDelete(null)}
+                className="px-4 py-2 border rounded cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

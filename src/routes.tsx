@@ -29,6 +29,10 @@ export const AppRoutes = () => {
                   path={PATHS.ADMIN_VIEW.STUDENT_MGNT.ADD.path}
                   element={<Views.AddStudent />}
                 />
+                                <Route
+                  path={PATHS.ADMIN_VIEW.STUDENT_MGNT.EDIT.path}
+                  element={<Views.EditStudent />}
+                />
                 <Route
                   path={PATHS.ADMIN_VIEW.ADVISOR_MGNT.VIEW.path}
                   element={<Views.ViewAdvisor />}

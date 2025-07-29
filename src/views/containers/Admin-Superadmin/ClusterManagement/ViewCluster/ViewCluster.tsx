@@ -32,7 +32,7 @@ const ViewCluster: React.FC = () => {
 
   // build raw table data
   const tableData = clusters.map((c: Cluster) => [
-    String(c.cluster_id), // Ensure cluster_id is string for display/filtering
+    String(c.id), // Ensure cluster_id is string for display/filtering
     c.name,
     getAdvisorName(c.advisor), // Use helper to get advisor name
     String(c.student_count), // Ensure student_count is string for display/filtering

@@ -12,7 +12,7 @@ interface SideNavProps {
 const SideNav: React.FC<SideNavProps> = ({ nav, role }) => {
   return (
     <div
-      className={`fixed bg-[#FFFFFF] sm:w-67 w-full h-full flex flex-col overflow-y-auto shadow-zinc-500 shadow-lg duration-300 ease-in-out
+      className={`z-100 fixed bg-[#FFFFFF] sm:w-67 w-full h-full flex flex-col overflow-y-auto shadow-zinc-500 shadow-lg duration-300 ease-in-out
         ${nav ? 'translate-x-0' : '-translate-x-full'}`}
     >
       <SideNavLinkDropdown

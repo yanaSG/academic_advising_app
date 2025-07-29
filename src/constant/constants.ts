@@ -48,6 +48,10 @@ export const PATHS = {
             ADD: {
                 path: "students/add",
                 label: "Add Students"
+            },
+            EDIT: {
+                path: "students/edit/:id",
+                label: "Edit Students"
             }
         },
         ADVISOR_MGNT: {

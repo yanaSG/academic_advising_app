@@ -49,7 +49,7 @@ const ViewAdvisor: React.FC = () => {
       </button>
       <button
         onClick={() => setToDelete(adv)}
-        className="text-red-600 border rounded-full px-2 py-1 flex items-center gap-1"
+        className="text-red-600 w-7 h-7 border rounded-full px-2 py-1 flex items-center gap-1"
       >
         <FaTrashAlt/>
       </button>
