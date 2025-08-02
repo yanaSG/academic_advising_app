@@ -23,7 +23,7 @@ import {
   uploadCSV as apiUploadCSV,
 } from '../services/studentService';
 
-// Types
+// ================== TYPES ==================
 export interface Cluster {
   id: number;
   cluster_id: number;
@@ -50,7 +50,6 @@ export interface Student {
   cluster: number | null;
 }
 
-// Graph Data Types
 export interface StudentsPerLevelData {
   yearLevel: string;
   students: number;
@@ -74,8 +73,7 @@ export interface StudentClustersData {
   datasets: StudentClusterDataset[];
 }
 
-
-// Context value shape
+// ================== CONTEXT TYPE ==================
 interface ClusteringContextType {
   clusters: Cluster[];
   students: Student[];
@@ -88,14 +86,13 @@ interface ClusteringContextType {
   updateAdvisor: (id: number, payload: Omit<Advisor, 'id'>) => Promise<Advisor>;
   deleteAdvisor: (id: number) => Promise<void>;
 
-  // New graph data states and fetchers
   studentsPerLevelData: StudentsPerLevelData[];
   studentsPerProgramData: StudentsPerProgramData[];
   studentClustersData: StudentClustersData;
   studentCount: number | null;
   advisorCount: number | null;
   graphDataLoading: boolean;
-  lastFetchedClusterFeature: string | null; // NEW: To track the last fetched secondary feature
+  lastFetchedClusterFeature: string | null;
   fetchGraphDataByType: (graphType: string, secondaryFeature?: string) => Promise<any>;
 
   fetchStudents: () => Promise<Student[]>;
@@ -105,6 +102,7 @@ interface ClusteringContextType {
   uploadCSV: (file: File) => Promise<any>;
 }
 
+// ================== CONTEXT DEFAULT ==================
 export const ClusteringContext = createContext<ClusteringContextType>({
   clusters: [],
   students: [],
@@ -123,7 +121,7 @@ export const ClusteringContext = createContext<ClusteringContextType>({
   studentCount: null,
   advisorCount: null,
   graphDataLoading: false,
-  lastFetchedClusterFeature: null, // NEW: Initialize to null
+  lastFetchedClusterFeature: null,
   fetchGraphDataByType: async () => { throw new Error('fetchGraphDataByType not implemented'); },
 
   fetchStudents: async () => { throw new Error('fetchStudents not implemented'); },
@@ -133,6 +131,7 @@ export const ClusteringContext = createContext<ClusteringContextType>({
   uploadCSV: async () => { throw new Error('uploadCSV not implemented'); },
 });
 
+// ================== PROVIDER ==================
 interface ClusteringProviderProps {
   children: ReactNode;
 }
@@ -143,15 +142,15 @@ export const ClusteringProvider: React.FC<ClusteringProviderProps> = ({ children
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // New states for graph data
   const [studentsPerLevelData, setStudentsPerLevelData] = useState<StudentsPerLevelData[]>([]);
   const [studentsPerProgramData, setStudentsPerProgramData] = useState<StudentsPerProgramData[]>([]);
   const [studentClustersData, setStudentClustersData] = useState<StudentClustersData>({ datasets: [] });
-  const [lastFetchedClusterFeature, setLastFetchedClusterFeature] = useState<string | null>(null); // NEW state
+  const [lastFetchedClusterFeature, setLastFetchedClusterFeature] = useState<string | null>(null);
   const [studentCount, setStudentCount] = useState<number | null>(null);
   const [advisorCount, setAdvisorCount] = useState<number | null>(null);
   const [graphDataLoading, setGraphDataLoading] = useState<boolean>(false);
 
+  // ✅ Fetch data and compute student_count
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -161,8 +160,14 @@ export const ClusteringProvider: React.FC<ClusteringProviderProps> = ({ children
         axios.get<Advisor[]>('http://127.0.0.1:8000/api/clustering/advisors/'),
       ]);
 
-      setClusters(clustersRes.data);
-      setStudents(studentsRes.data);
+      const studentsData = studentsRes.data;
+      const clustersWithCount: Cluster[] = clustersRes.data.map(cluster => ({
+        ...cluster,
+        student_count: studentsData.filter(s => s.cluster === cluster.id).length,
+      }));
+
+      setClusters(clustersWithCount);
+      setStudents(studentsData);
       setAdvisors(advisorsRes.data);
     } catch (err) {
       console.error('Failed to fetch initial data:', err);
@@ -171,28 +176,7 @@ export const ClusteringProvider: React.FC<ClusteringProviderProps> = ({ children
     }
   };
 
-  // Updated function to fetch specific graph data by type and secondary feature
-  const fetchGraphDataByType = async (graphType: string, secondaryFeature?: string) => {
-    setGraphDataLoading(true);
-    try {
-      const result = await apiFetchGraphData(graphType, secondaryFeature);
-      if (graphType === 'students_per_level') {
-        setStudentsPerLevelData(result.data);
-      } else if (graphType === 'students_per_program') {
-        setStudentsPerProgramData(result.data);
-      } else if (graphType === 'student_clusters') {
-        setStudentClustersData(result.data);
-        setLastFetchedClusterFeature(secondaryFeature || null); // NEW: Update the last fetched feature
-      }
-      return result.data;
-    } catch (err) {
-      console.error(`Failed to fetch ${graphType} data:`, err);
-      return null;
-    } finally {
-      setGraphDataLoading(false);
-    }
-  };
-
+  // ✅ Fetch student/advisor counts
   const fetchCounts = async () => {
     setGraphDataLoading(true);
     try {
@@ -209,7 +193,7 @@ export const ClusteringProvider: React.FC<ClusteringProviderProps> = ({ children
     }
   };
 
-
+  // ✅ Advisor CRUD
   const createAdvisor = async (payload: Omit<Advisor, 'id'>): Promise<Advisor> => {
     setLoading(true);
     try {
@@ -242,11 +226,12 @@ export const ClusteringProvider: React.FC<ClusteringProviderProps> = ({ children
     }
   };
 
+  // ✅ Student CRUD
   const createStudent = async (payload: Omit<Student, 'id'>): Promise<Student> => {
     setLoading(true);
     try {
       const response = await apiCreateStudent(payload);
-      await fetchData(); // Re-fetch all data to update student list and counts
+      await fetchData();
       return response.data;
     } finally {
       setLoading(false);
@@ -278,14 +263,37 @@ export const ClusteringProvider: React.FC<ClusteringProviderProps> = ({ children
     setLoading(true);
     try {
       const response = await apiUploadCSV(file);
-      await fetchData(); // Re-fetch all data after CSV upload
-      await fetchCounts(); // Also re-fetch counts as new students might be added
+      await fetchData();
+      await fetchCounts();
       return response.data;
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Graph Data Fetcher
+  const fetchGraphDataByType = async (graphType: string, secondaryFeature?: string) => {
+    setGraphDataLoading(true);
+    try {
+      const result = await apiFetchGraphData(graphType, secondaryFeature);
+      if (graphType === 'students_per_level') {
+        setStudentsPerLevelData(result.data);
+      } else if (graphType === 'students_per_program') {
+        setStudentsPerProgramData(result.data);
+      } else if (graphType === 'student_clusters') {
+        setStudentClustersData(result.data);
+        setLastFetchedClusterFeature(secondaryFeature || null);
+      }
+      return result.data;
+    } catch (err) {
+      console.error(`Failed to fetch ${graphType} data:`, err);
+      return null;
+    } finally {
+      setGraphDataLoading(false);
+    }
+  };
+
+  // Fetch initial data
   useEffect(() => {
     fetchData();
     fetchCounts();

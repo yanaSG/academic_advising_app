@@ -1,47 +1,34 @@
 // src/views/containers/Admin-Superadmin/ClusterManagement/ViewCluster/ViewCluster.tsx
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import * as Components from "../../../../components";
-import { ClusteringContext, type Cluster, type Advisor } from "../../../../../contexts/clustering"; // Adjust path to your context
+import { ClusteringContext, type Cluster, type Advisor } from "../../../../../contexts/clustering";
 import { useNavigate } from 'react-router-dom';
-import { FaEdit } from "react-icons/fa"; // Assuming you use this icon
 
 const ViewCluster: React.FC = () => {
-  const { clusters, advisors, loading } = useContext(ClusteringContext); // Get clusters, advisors, loading, fetchData
+  const { clusters, advisors, loading } = useContext(ClusteringContext);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortValue, setSortValue] = useState("");
   const navigate = useNavigate();
 
-  // Effect to fetch data on component mount
-  useEffect(() => {
-    // fetchData is already called on mount in ClusteringProvider,
-    // but calling it here ensures this specific view's data is fresh if needed.
-    // However, it might cause redundant fetches if not managed carefully.
-    // For now, we rely on the context's initial fetch.
-    // If you need to force a refresh specific to this view, uncomment:
-    // fetchData();
-  }, []);
-
-  // Helper to get advisor name
+  // Helper: Get advisor name by ID
   const getAdvisorName = (advisorId: number | null): string => {
-    if (advisorId === null) {
-      return "No Advisor";
-    }
+    if (advisorId === null) return "No Advisor";
     const advisor = advisors.find((adv: Advisor) => adv.id === advisorId);
     return advisor ? advisor.name : "Unknown Advisor";
   };
 
-  // build raw table data
+  // ✅ Build table data including student count
   const tableData = clusters.map((c: Cluster) => [
-    String(c.id), // Ensure cluster_id is string for display/filtering
-    c.name,
-    getAdvisorName(c.advisor), // Use helper to get advisor name
-    String(c.student_count), // Ensure student_count is string for display/filtering
+    String(c.id),                          // Cluster ID
+    c.name,                                // Cluster name
+    getAdvisorName(c.advisor),             // Advisor name
+    String(c.student_count ?? 0),          // Student count (fallback 0 if missing)
   ]);
 
-  // filter & sort
+  // ✅ Filter + Sort
   const filtered = tableData
-    .filter(([id, name, advName]) => // Filter using advisor name from tableData
-      [id, name, advName] // Include advisor name in search
+    .filter(([id, name, advName]) =>
+      [id, name, advName]
         .map(String)
         .some((field) => field.toLowerCase().includes(searchTerm.toLowerCase()))
     )
@@ -60,12 +47,10 @@ const ViewCluster: React.FC = () => {
       }
     });
 
+  // ✅ Handle Edit Click
   const handleEdit = (rowIndex: number) => {
-    // Get the actual cluster ID from the original clusters array
     const clusterToEdit = clusters[rowIndex];
-    if (clusterToEdit) {
-      navigate(`/admin/clusters/edit/${clusterToEdit.id}`);
-    }
+    if (clusterToEdit) navigate(`/admin/clusters/edit/${clusterToEdit.id}`);
   };
 
   return (
@@ -78,26 +63,16 @@ const ViewCluster: React.FC = () => {
         sortValue={sortValue}
         onSortChange={setSortValue}
         placeholder="Search by ID, name, or advisor..."
-        // Assuming you want an "Add Cluster" button here
-        // onAdd={() => navigate('/admin/clusters/add')}
-        // addButtonLabel="Add Cluster"
       />
 
       {loading ? (
         <div className="text-gray-500">Loading clusters…</div>
       ) : (
         <Components.CRUDTable
-          columns={[
-            "ID",
-            "Name",
-            "Advisor",
-            "Student Count",
-            "Actions"
-          ]}
+          columns={["ID", "Name", "Advisor", "Student Count", "Actions"]}
           data={filtered}
           itemLabel="cluster"
           onEdit={handleEdit}
-          // onDelete={handleDelete} // Implement delete if needed
         />
       )}
     </div>
