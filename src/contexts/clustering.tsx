@@ -272,26 +272,31 @@ export const ClusteringProvider: React.FC<ClusteringProviderProps> = ({ children
   };
 
   // ✅ Graph Data Fetcher
-  const fetchGraphDataByType = async (graphType: string, secondaryFeature?: string) => {
+const fetchGraphDataByType = async (graphType: string, query?: string) => {
     setGraphDataLoading(true);
     try {
-      const result = await apiFetchGraphData(graphType, secondaryFeature);
-      if (graphType === 'students_per_level') {
-        setStudentsPerLevelData(result.data);
-      } else if (graphType === 'students_per_program') {
-        setStudentsPerProgramData(result.data);
-      } else if (graphType === 'student_clusters') {
-        setStudentClustersData(result.data);
-        setLastFetchedClusterFeature(secondaryFeature || null);
-      }
-      return result.data;
+        const urlQuery = query ? `&${query}` : '';
+        const result = await apiFetchGraphData(graphType + urlQuery);
+        
+        if (graphType === 'pca_scatter') {
+            setStudentClustersData(result.data);
+        } else if (graphType === 'students_per_level') {
+            setStudentsPerLevelData(result.data);
+        } else if (graphType === 'students_per_program') {
+            setStudentsPerProgramData(result.data);
+        } else if (graphType === 'student_clusters') {
+            setStudentClustersData(result.data);
+            setLastFetchedClusterFeature(query || null);
+        }
+        return result.data;
     } catch (err) {
-      console.error(`Failed to fetch ${graphType} data:`, err);
-      return null;
+        console.error(`Failed to fetch ${graphType} data:`, err);
+        return null;
     } finally {
-      setGraphDataLoading(false);
+        setGraphDataLoading(false);
     }
-  };
+};
+
 
   // Fetch initial data
   useEffect(() => {

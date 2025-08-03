@@ -17,7 +17,7 @@ const CRUDHeader: React.FC<CRUDHeaderProps> = ({
   placeholder = "Search...",
 }) => {
   return (
-    <div className="relative z-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+    <div className="relative z-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 w-full">
 
       {/* Search Input */}
       <input
