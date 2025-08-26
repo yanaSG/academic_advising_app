@@ -3,8 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FaArrowLeft } from 'react-icons/fa';
-import * as Components from '../../../../components';
 import type { Advisor, Cluster, Student } from '../../../../../contexts/clustering';
+
+// ---- Types for PCA response ----
+type PCATopFeature = {
+  feature_key: string;
+  loading: number;       // signed (used for color)
+  abs_loading: number;   // magnitude (unused in UI but kept for completeness)
+};
+type PCAItem = {
+  pc_number: number;
+  explained_variance_ratio: number;
+  top_features: PCATopFeature[];
+};
+type PCAResponse = {
+  upload_id: string;
+  cluster_id: number; // PK in response
+  pcs: PCAItem[];
+};
 
 const EditCluster: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -12,9 +28,9 @@ const EditCluster: React.FC = () => {
   const clusterIdNum = Number(id);
 
   // Local form state
-  const [clusterCode, setClusterCode] = useState('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [displayId, setDisplayId] = useState<string>(''); // DB PK shown read-only
+  const [name, setName] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const [advisorId, setAdvisorId] = useState<number | ''>('');
 
   // Data lists
@@ -22,30 +38,39 @@ const EditCluster: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // PCA insights (structured for color rendering)
+  const [pcaData, setPcaData] = useState<PCAItem[]>([]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch cluster detail
+        // 1) Cluster detail
         const clRes = await axios.get<Cluster & { advisor_name?: string }>(
           `http://127.0.0.1:8000/api/clustering/clusters/${clusterIdNum}/`
         );
         const cl = clRes.data;
-        setClusterCode(cl.cluster_id);
+        setDisplayId(String(cl.id));      // show DB PK (1..4)
         setName(cl.name);
         setDescription(cl.description);
         setAdvisorId(cl.advisor ?? '');
 
-        // Fetch all advisors
+        // 2) Advisors
         const advRes = await axios.get<Advisor[]>(
           'http://127.0.0.1:8000/api/clustering/advisors/'
         );
         setAllAdvisors(advRes.data);
 
-        // Fetch students under this cluster
+        // 3) Students in this cluster (by PK)
         const stuRes = await axios.get<Student[]>(
           `http://127.0.0.1:8000/api/clustering/students/?cluster=${clusterIdNum}`
         );
         setStudents(stuRes.data);
+
+        // 4) PCA insights (structured; do NOT append into description)
+        const pcaRes = await axios.get<PCAResponse>(
+          `http://127.0.0.1:8000/api/clustering/clusters/${clusterIdNum}/pca-top-features/?top_pcs=3&top_features=3`
+        );
+        setPcaData(pcaRes.data?.pcs ?? []);
       } catch (err) {
         console.error('Error loading cluster data:', err);
       } finally {
@@ -61,7 +86,6 @@ const EditCluster: React.FC = () => {
       await axios.put(
         `http://127.0.0.1:8000/api/clustering/clusters/${clusterIdNum}/`,
         {
-          cluster_id: clusterCode,
           name,
           description,
           advisor: advisorId === '' ? null : advisorId,
@@ -78,7 +102,7 @@ const EditCluster: React.FC = () => {
     return <div className="p-4 text-gray-500">Loading...</div>;
   }
 
-  // build advisor options: those with no cluster, or the one currently assigned
+  // Advisors available: unassigned or assigned to this cluster
   const advisorOptions = allAdvisors.filter(
     (a) => a.cluster == null || a.cluster === clusterIdNum
   );
@@ -99,12 +123,12 @@ const EditCluster: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700">Cluster ID</label>
             <input
-              value={clusterCode}
-              onChange={(e) => setClusterCode(e.target.value)}
-              required
-              className="mt-1 w-full px-3 py-2 border rounded-md focus:ring-[#09984B]"
+              value={displayId}
+              readOnly
+              className="mt-1 w-full px-3 py-2 border rounded-md bg-gray-50"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
@@ -114,6 +138,7 @@ const EditCluster: React.FC = () => {
               className="mt-1 w-full px-3 py-2 border rounded-md focus:ring-[#09984B]"
             />
           </div>
+
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700">Description</label>
             <textarea
@@ -123,13 +148,49 @@ const EditCluster: React.FC = () => {
               className="mt-1 w-full px-3 py-2 border rounded-md focus:ring-[#09984B]"
             />
           </div>
+
+          {/* PCA Insights (read-only, with color for sign) */}
+          {pcaData.length > 0 && (
+            <div className="sm:col-span-2 mt-2 p-3 border rounded-md bg-gray-50">
+              <h3 className="font-medium mb-2">PCA Insights</h3>
+              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                {pcaData.map((pc) => {
+                  const evrPct = (pc.explained_variance_ratio * 100).toFixed(1);
+                  return (
+                    <li key={pc.pc_number}>
+                      <span className="font-semibold mr-1">
+                        {`PC${pc.pc_number} (${evrPct}%):`}
+                      </span>
+                      {pc.top_features.map((tf, idx) => {
+                        const isPos = tf.loading >= 0;
+                        const colorClass = isPos ? 'text-green-600' : 'text-red-600';
+                        const value = tf.loading.toFixed(2);
+                        return (
+                          <span key={tf.feature_key + idx}>
+                            <span className="mr-1">{tf.feature_key}</span>
+                            <span className={`${colorClass} font-bold`}>
+                              ({value})
+                            </span>
+                            {idx < pc.top_features.length - 1 ? <span>, </span> : null}
+                          </span>
+                        );
+                      })}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Advisor</label>
             <div className="flex justify-between items-center gap-4">
               <div className="flex-grow max-w-lg">
                 <select
                   value={advisorId}
-                  onChange={(e) => setAdvisorId(e.target.value === '' ? '' : Number(e.target.value))}
+                  onChange={(e) =>
+                    setAdvisorId(e.target.value === '' ? '' : Number(e.target.value))
+                  }
                   className="w-full px-3 py-2 border rounded-md focus:ring-[#09984B]"
                 >
                   <option value="">Unassigned</option>
@@ -149,8 +210,6 @@ const EditCluster: React.FC = () => {
               </button>
             </div>
           </div>
-
-
         </div>
 
         <div className="mt-10 flex justify-between">
@@ -160,16 +219,12 @@ const EditCluster: React.FC = () => {
             </p>
             <ul className="mt-2 list-disc pl-5 text-gray-700">
               {students.map((s) => (
-                <li key={s.id}>{s.student_id} – {s.name ?? 'Unnamed'}</li>
+                <li key={s.id}>
+                  {s.student_id} – {s.name ?? 'Unnamed'}
+                </li>
               ))}
             </ul>
           </div>
-          {/* <button
-            type="submit"
-            className="px-6 py-2 bg-[#09984B] text-white rounded-md hover:bg-[#016630] transition"
-          >
-            Update Cluster
-          </button> */}
         </div>
       </form>
     </div>

@@ -39,10 +39,13 @@ const ViewCluster: React.FC = () => {
       }
     });
 
-  const handleEdit = (rowIndex: number) => {
-    const clusterToEdit = clusters[rowIndex];
-    if (clusterToEdit) navigate(`/admin/clusters/edit/${clusterToEdit.id}`);
-  };
+// ViewCluster.tsx — AFTER
+const handleEdit = (rowIndex: number) => {
+  // filtered[rowIndex][0] is the visible "ID" column value
+  const idStr = filtered[rowIndex]?.[0] as string | undefined;
+  if (idStr) navigate(`/admin/clusters/edit/${idStr}`);
+};
+
 
   // ✅ Export to Excel
   const handleExportExcel = async () => {
