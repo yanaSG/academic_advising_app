@@ -65,6 +65,7 @@ export const AppRoutes = () => {
             {/* Public Routes */}
             <Route path={PATHS.LOGIN.path} element={<Views.Login />} />
             <Route path={PATHS.SIGNUP.path} element={<Views.Signup />} />
+            <Route path="/student-survey" element={<Views.StudentForm />} />
             <Route path={PATHS.LOGOUT.path} element={<Views.Logout />} />
             <Route path={PATHS.NOT_FOUND.path} element={<Views.NotFound />} />
           </Routes>
