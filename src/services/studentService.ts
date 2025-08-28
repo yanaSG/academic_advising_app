@@ -1,3 +1,4 @@
+
 // src/services/studentService.ts
 import axios from 'axios';
 
@@ -71,4 +72,36 @@ export const uploadCSV = (file: File) => {
       'Content-Type': 'multipart/form-data',
     },
   });
+};
+
+
+
+// Appends a form response to the main CSV file by converting the form to a CSV row and uploading it
+export const appendSurveyToCSV = async (responses: any) => {
+  if (!responses) return;
+  // Define the order of fields as they appear in the form (top to bottom)
+  const orderedFields = [
+    'studentId',
+    'program',
+    'gender',
+    'gpa',
+    'performance',
+    'workload',
+    'learningStyle',
+    'problemSolving',
+    'personality',
+    'hobbies',
+    'otherHobbies',
+    'financial',
+    'parentsStatus',
+    'birthOrder',
+    'responsibilities',
+  ];
+  const replacer = (value: any) => (Array.isArray(value) ? value.join('; ') : value ?? '');
+  const row = orderedFields.map(field => JSON.stringify(replacer(responses[field]))).join(',');
+  const csvContent = row + '\r\n';
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const file = new File([blob], 'student_survey_append.csv', { type: 'text/csv' });
+  // Use the existing uploadCSV function to send the new row to the backend
+  return uploadCSV(file);
 };

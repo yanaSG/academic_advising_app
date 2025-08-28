@@ -1,6 +1,7 @@
 // components/FormCardExamples.tsx
 import React, { useState } from 'react';
 import FormCard from '../../components/Feature/FormCard';
+import { appendSurveyToCSV } from '../../../services/studentService'
 import type { SurveyResponses, OptionItem } from '../../../types/formcard';
 
 const FormCardExamples: React.FC = () => {
@@ -34,9 +35,13 @@ const FormCardExamples: React.FC = () => {
     { label: 'Ambivert (A mix of both; enjoys both solitude and social interaction)', value: 'ambivert' }
   ];
 
-  const handleSubmit = (): void => {
-    console.log('Survey responses:', responses);
-    // Handle form submission
+  const handleSubmit = async (): Promise<void> => {
+    try {
+      await appendSurveyToCSV(responses);
+      alert('Survey submitted and appended to CSV!');
+    } catch (error) {
+      alert('Failed to submit survey.');
+    }
   };
 
   return (
@@ -228,7 +233,7 @@ const FormCardExamples: React.FC = () => {
           onChange={(value) => handleResponseChange('responsibilities', value)}
         />
 
-        <div className="pt-6">
+        <div className="pt-6 flex flex-col gap-2">
           <button 
             onClick={handleSubmit}
             className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
